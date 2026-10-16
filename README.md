@@ -38,6 +38,8 @@ The login checks the supplied demo credentials in the frontend. It is for demons
 
 - Add a task with the input at the top of the Todo page.
 - Select the circle beside a task to mark it complete or active again.
+- Select **Edit** beside an active task to change its title; save or cancel the edit. Completed tasks cannot be edited.
+- Select **Remove** to delete a task, whether it is active or completed.
 - Use **All**, **Active**, or **Completed** to filter the list.
 - Use the × button to delete a task.
 - The remaining count shows how many tasks are active.

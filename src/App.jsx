@@ -108,6 +108,8 @@ function LoginPage({ onLogin, theme, onToggleTheme }) {
 function TodoPage({ onLogout, theme, onToggleTheme }) {
   const [todos, setTodos] = useState(readTodos);
   const [draft, setDraft] = useState('');
+  const [editingId, setEditingId] = useState(null);
+  const [editingDraft, setEditingDraft] = useState('');
   const [filter, setFilter] = useState('All');
   const remainingCount = todos.filter((todo) => !todo.completed).length;
   const completedCount = todos.length - remainingCount;
@@ -133,11 +135,37 @@ function TodoPage({ onLogout, theme, onToggleTheme }) {
   }
 
   function toggleTodo(id) {
+    if (editingId === id) {
+      setEditingId(null);
+      setEditingDraft('');
+    }
     saveTodos(todos.map((todo) => todo.id === id ? { ...todo, completed: !todo.completed } : todo));
+  }
+
+  function startEditing(todo) {
+    if (todo.completed) return;
+    setEditingId(todo.id);
+    setEditingDraft(todo.title);
+  }
+
+  function cancelEditing() {
+    setEditingId(null);
+    setEditingDraft('');
+  }
+
+  function saveEdit(event, id) {
+    event.preventDefault();
+    const title = editingDraft.trim();
+    const task = todos.find((todo) => todo.id === id);
+    if (!title || !task || task.completed) return;
+
+    saveTodos(todos.map((todo) => todo.id === id ? { ...todo, title } : todo));
+    cancelEditing();
   }
 
   function deleteTodo(id) {
     saveTodos(todos.filter((todo) => todo.id !== id));
+    if (editingId === id) cancelEditing();
   }
 
   return (
@@ -220,13 +248,40 @@ function TodoPage({ onLogout, theme, onToggleTheme }) {
                   role="checkbox"
                   type="button"
                 >{todo.completed && <span aria-hidden="true">&#10003;</span>}</button>
-                <span className="todo-title">{todo.title}</span>
-                <button
-                  aria-label={`Delete ${todo.title}`}
-                  className="delete-button"
-                  onClick={() => deleteTodo(todo.id)}
-                  type="button"
-                ><span aria-hidden="true">&times;</span></button>
+                {editingId === todo.id ? (
+                  <form className="edit-form" onSubmit={(event) => saveEdit(event, todo.id)}>
+                    <label className="visually-hidden" htmlFor={`edit-${todo.id}`}>Edit task</label>
+                    <input
+                      autoFocus
+                      id={`edit-${todo.id}`}
+                      onChange={(event) => setEditingDraft(event.target.value)}
+                      onKeyDown={(event) => { if (event.key === 'Escape') cancelEditing(); }}
+                      value={editingDraft}
+                    />
+                    <div className="edit-actions">
+                      <button className="edit-save" disabled={!editingDraft.trim()} type="submit">Save</button>
+                      <button aria-label="Cancel editing" className="edit-cancel" onClick={cancelEditing} type="button">Cancel</button>
+                    </div>
+                  </form>
+                ) : (
+                  <>
+                    <span className="todo-title">{todo.title}</span>
+                    <div className="task-actions">
+                      {!todo.completed && (
+                        <button aria-label={`Edit ${todo.title}`} className="edit-button" onClick={() => startEditing(todo)} type="button">
+                          <span aria-hidden="true">&#9998;</span> Edit
+                        </button>
+                      )}
+                      <button
+                        aria-label={`Remove ${todo.title}`}
+                        className="delete-button"
+                        onClick={() => deleteTodo(todo.id)}
+                        title="Remove task"
+                        type="button"
+                      >Remove</button>
+                    </div>
+                  </>
+                )}
               </li>
             ))}
           </ul>
